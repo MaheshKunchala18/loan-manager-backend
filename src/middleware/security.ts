@@ -38,27 +38,41 @@ export const loanApplicationLimiter = createRateLimit(
 // CORS configuration using environment variables
 export const corsOptions = {
   origin: function (origin: string | undefined, callback: Function) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     const allowedOrigins = [
       process.env.FRONTEND_URL || 'http://localhost:3000',
       'http://localhost:3000',
-      'http://localhost:5173', // Vite default
+      'http://localhost:5173',
       'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173'
+      'http://127.0.0.1:5173',
+      'https://loanmanagerwebapp.netlify.app',
+      'https://loan-manager-frontend.netlify.app'
     ];
+
+    if (process.env.NODE_ENV === 'production') {
+      const productionOrigins = [
+        'https://loanmanagerwebapp.netlify.app',
+        'https://loan-manager-frontend.netlify.app',
+        process.env.FRONTEND_URL
+      ].filter(Boolean);
+      
+      if (productionOrigins.some(allowedOrigin => origin === allowedOrigin)) {
+        return callback(null, true);
+      }
+    }
     
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-App-Name', 'X-App-Version']
 };
 
 export const corsMiddleware = cors(corsOptions); 
