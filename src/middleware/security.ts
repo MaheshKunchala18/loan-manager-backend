@@ -1,7 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 
-// Rate limiting configuration using environment variables
 export const createRateLimit = (windowMs: number, max: number, message: string) => {
   return rateLimit({
     windowMs,
@@ -15,8 +14,6 @@ export const createRateLimit = (windowMs: number, max: number, message: string) 
   });
 };
 
-// Different rate limits for different endpoints using environment variables
-// More lenient limits for development
 export const generalLimiter = createRateLimit(
   parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute instead of 15
   parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // 1000 requests instead of 100
@@ -35,39 +32,30 @@ export const loanApplicationLimiter = createRateLimit(
   'Too many loan applications, please try again later'
 );
 
-// CORS configuration using environment variables
 export const corsOptions = {
   origin: function (origin: string | undefined, callback: Function) {
     if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
+
+    const envAllowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+      .split(',')
+      .map(o => o.trim())
+      .filter(Boolean);
+
+    const defaultDevOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
       'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173',
-      'https://loanmanagerwebapp.netlify.app',
-      'https://loan-manager-frontend.netlify.app'
+      'http://127.0.0.1:5173'
     ];
 
-    if (process.env.NODE_ENV === 'production') {
-      const productionOrigins = [
-        'https://loanmanagerwebapp.netlify.app',
-        'https://loan-manager-frontend.netlify.app',
-        process.env.FRONTEND_URL
-      ].filter(Boolean);
-      
-      if (productionOrigins.some(allowedOrigin => origin === allowedOrigin)) {
-        return callback(null, true);
-      }
-    }
-    
+    const allowedOrigins: string[] = [...envAllowedOrigins, ...defaultDevOrigins];
+
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log(`CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+
+    console.warn(`CORS blocked origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   optionsSuccessStatus: 200,
