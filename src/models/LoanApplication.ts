@@ -105,16 +105,15 @@ LoanApplicationSchema.methods.getFullName = function(): string {
 
 // Get status color for UI
 LoanApplicationSchema.methods.getStatusColor = function(): string {
-  const colors = {
+  const colors: Record<string, string> = {
     pending: 'yellow',
     verified: 'blue',
     approved: 'green',
     rejected: 'red'
   };
-  return colors[this.status] || 'gray';
+  return colors[this.status as string] || 'gray';
 };
 
-// Indexes for better query performance
 LoanApplicationSchema.index({ userId: 1 });
 LoanApplicationSchema.index({ status: 1 });
 LoanApplicationSchema.index({ createdAt: -1 });

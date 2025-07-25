@@ -6,7 +6,7 @@ const connectDB = async (): Promise<void> => {
     
     const conn = await mongoose.connect(mongoURI);
     
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Connected`);
     
     // Handle connection events
     mongoose.connection.on('error', (error) => {

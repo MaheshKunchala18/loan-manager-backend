@@ -3,14 +3,12 @@ import LoanApplication from '../models/LoanApplication';
 
 export const createInitialAdmin = async (): Promise<void> => {
   try {
-    // Check if admin already exists
     const existingAdmin = await User.findOne({ role: 'admin' });
     if (existingAdmin) {
       console.log('Admin user already exists');
       return;
     }
 
-    // Create default admin user
     const adminUser = new User({
       email: process.env.ADMIN_EMAIL || 'admin@creditsea.com',
       password: process.env.ADMIN_PASSWORD || 'Admin123!',
@@ -29,14 +27,12 @@ export const createInitialAdmin = async (): Promise<void> => {
 
 export const createSampleData = async (): Promise<void> => {
   try {
-    // Check if sample data already exists
     const existingLoans = await LoanApplication.countDocuments();
     if (existingLoans > 0) {
-      console.log('Sample data already exists');
+      console.log('✅ Sample loan data already exists');
       return;
     }
 
-    // Create sample users
     const sampleUsers = [
       {
         email: 'verifier@creditsea.com',
@@ -63,12 +59,18 @@ export const createSampleData = async (): Promise<void> => {
 
     const createdUsers = [];
     for (const userData of sampleUsers) {
-      const user = new User(userData);
-      await user.save();
-      createdUsers.push(user);
+      const existingUser = await User.findOne({ email: userData.email });
+      if (existingUser) {
+        console.log(`User ${userData.email} already exists, skipping creation`);
+        createdUsers.push(existingUser);
+      } else {
+        const user = new User(userData);
+        await user.save();
+        createdUsers.push(user);
+        console.log(`✅ Created user: ${userData.email}`);
+      }
     }
 
-    // Create sample loan applications
     const sampleLoans = [
       {
         userId: createdUsers[1]._id,

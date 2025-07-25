@@ -3,7 +3,6 @@ import LoanApplication from '../models/LoanApplication';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/auth';
 
-// Get dashboard statistics
 export const getDashboardStats = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.user) {
@@ -11,41 +10,33 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
-    // Basic counts
     const totalUsers = await User.countDocuments({ isActive: true });
     const totalBorrowers = await User.countDocuments({ role: 'user', isActive: true });
     const totalLoans = await LoanApplication.countDocuments();
     
-    // Loan status counts
     const pendingLoans = await LoanApplication.countDocuments({ status: 'pending' });
     const verifiedLoans = await LoanApplication.countDocuments({ status: 'verified' });
     const approvedLoans = await LoanApplication.countDocuments({ status: 'approved' });
     const rejectedLoans = await LoanApplication.countDocuments({ status: 'rejected' });
 
-    // Real financial calculations
     const approvedApplications = await LoanApplication.find({ status: 'approved' });
     const cashDisbursed = approvedApplications.reduce((sum, app) => sum + app.loanAmount, 0);
     
-    // More realistic calculations based on actual loan data
     const allApplications = await LoanApplication.find();
     const totalApplicationValue = allApplications.reduce((sum, app) => sum + app.loanAmount, 0);
     
-    // Calculate real metrics instead of simulated
     const averageLoanAmount = approvedLoans > 0 ? Math.round(cashDisbursed / approvedLoans) : 0;
     const loanApprovalRate = totalLoans > 0 ? Math.round((approvedLoans / totalLoans) * 100) : 0;
     
-    // More realistic financial projections
-    const annualInterestRate = 0.12; // 12% annual interest rate
-    const averageLoanTerm = 2; // 2 years average
+    const annualInterestRate = 0.12;
+    const averageLoanTerm = 2;
     const expectedInterest = Math.round(cashDisbursed * annualInterestRate * averageLoanTerm);
-    const cashReceived = Math.round(cashDisbursed * 0.35); // 35% collected so far
+    const cashReceived = Math.round(cashDisbursed * 0.35);
     
-    // Portfolio calculations
-    const savings = Math.round(cashDisbursed * 0.15); // 15% set aside as reserves
-    const repaidLoans = Math.round(approvedLoans * 0.65); // 65% repayment rate
-    const otherAccounts = Math.round(totalUsers * 0.08); // 8% have savings accounts
+    const savings = Math.round(cashDisbursed * 0.15);
+    const repaidLoans = Math.round(approvedLoans * 0.65);
+    const otherAccounts = Math.round(totalUsers * 0.08);
     
-    // Active users (users who have applied in last 6 months)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     const activeUsers = await User.countDocuments({
@@ -56,7 +47,6 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
       ]
     });
 
-    // Additional analytics
     const monthlyStats = await LoanApplication.aggregate([
       {
         $match: {
@@ -77,7 +67,6 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
     ]);
 
     const stats = {
-      // Primary metrics
       totalUsers,
       totalBorrowers,
       totalLoans,
@@ -87,27 +76,22 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
       repaidLoans,
       otherAccounts,
       
-      // Loan status breakdown
       pendingLoans,
       verifiedLoans,
       approvedLoans,
       rejectedLoans,
       
-      // Additional metrics
       activeUsers,
       loanApprovalRate,
       averageLoanAmount,
       
-      // Financial projections
       expectedInterest,
       totalApplicationValue,
       portfolioValue: cashDisbursed + savings,
       
-      // Performance indicators
       collectionRate: cashDisbursed > 0 ? Math.round((cashReceived / cashDisbursed) * 100) : 0,
       defaultRate: approvedLoans > 0 ? Math.round(((approvedLoans - repaidLoans) / approvedLoans) * 100) : 0,
       
-      // Time-based metrics
       lastUpdated: new Date().toISOString(),
       dataFreshness: 'real-time'
     };
@@ -126,7 +110,6 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
   }
 };
 
-// Get monthly loan metrics for charts
 export const getMonthlyLoanMetrics = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.user) {
@@ -134,7 +117,6 @@ export const getMonthlyLoanMetrics = async (req: AuthRequest, res: Response): Pr
       return;
     }
 
-    // Get last 12 months of data
     const monthsAgo = new Date();
     monthsAgo.setMonth(monthsAgo.getMonth() - 11);
 
@@ -174,7 +156,6 @@ export const getMonthlyLoanMetrics = async (req: AuthRequest, res: Response): Pr
       }
     ]);
 
-    // Format data for charts
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
@@ -184,7 +165,7 @@ export const getMonthlyLoanMetrics = async (req: AuthRequest, res: Response): Pr
       month: `${months[item._id.month - 1]} ${item._id.year}`,
       loansReleased: item.loansReleased,
       outstandingLoans: item.outstandingLoans,
-      repaymentsCollected: Math.round(item.repaymentsCollected * 0.75), // 75% collection rate
+      repaymentsCollected: Math.round(item.repaymentsCollected * 0.75),
       totalApplications: item.totalApplications,
       totalAmount: item.totalAmount,
       averageAmount: Math.round(item.averageAmount || 0),
@@ -206,7 +187,6 @@ export const getMonthlyLoanMetrics = async (req: AuthRequest, res: Response): Pr
   }
 };
 
-// Get recent loan applications for dashboard
 export const getRecentLoans = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.user) {
@@ -235,7 +215,6 @@ export const getRecentLoans = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
-// Get user-specific dashboard (for regular users)
 export const getUserDashboard = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.user) {
@@ -243,7 +222,6 @@ export const getUserDashboard = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    // Get user's loan applications
     const userLoans = await LoanApplication.find({ userId: req.user._id })
       .sort({ createdAt: -1 });
 
@@ -260,9 +238,9 @@ export const getUserDashboard = async (req: AuthRequest, res: Response): Promise
         .filter(loan => loan.status === 'pending')
         .reduce((sum, loan) => sum + loan.loanAmount, 0),
       latestApplication: userLoans[0] || null,
-      creditScore: Math.floor(Math.random() * 150) + 650, // Simulated credit score 650-800
-      eligibleAmount: Math.floor(Math.random() * 500000) + 100000, // Simulated eligible amount
-      accountAge: Math.floor((Date.now() - new Date(req.user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) // Days since account creation
+      creditScore: Math.floor(Math.random() * 150) + 650,
+      eligibleAmount: Math.floor(Math.random() * 500000) + 100000,
+      accountAge: Math.floor((Date.now() - new Date(req.user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
     };
 
     res.json({ 
